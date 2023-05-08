@@ -31,4 +31,4 @@ npm run build
 
 ### Show
 
-![image-20230508213549325](E:\桌面文件\青年大学习\Big_learning\README.assets\image-20230508213549325.png)
+![image-1](README.assets/image-1.png)
