@@ -1,5 +1,5 @@
 <template>
-    <a-layout-header style="background: #001529; padding: 0;">
-        <h1 style="color: white; text-align: center;">College of youth</h1>
+    <a-layout-header style="background: #070707; padding: 0; display: flex; justify-content: center;">
+        <img src="@/assets/images/Logo/Logo.png" alt="logo" style="height: 64px;">
     </a-layout-header>
 </template>

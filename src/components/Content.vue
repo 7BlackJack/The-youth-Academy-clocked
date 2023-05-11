@@ -18,25 +18,32 @@
                         </a-input-password>
                     </a-form-item>
                     <a-form-item>
-                        <a-button type="primary" html-type="submit" :loading="loading"
+                        <a-button type="primary" class="submit-button" html-type="submit" :loading="loading"
                             :disabled="!formModel.queryId || !formModel.token">Submit</a-button>
+                        <a-button type="dashed" class="query-button" @click="handleQuery" :disabled="!formModel.queryId"
+                            :style="{ backgroundColor: formModel.queryId ? '' : 'gray' }">Query</a-button>
+
                     </a-form-item>
                 </a-form>
                 <a-steps :current="currentStep" style="margin-top: 24px;">
                     <a-step title="Enter Query ID"></a-step>
                     <a-step title="Enter Token"></a-step>
                 </a-steps>
-
             </div>
         </a-card>
     </a-layout-content>
+    <ShowData v-if="responseData.value" :data="responseData.value" @update:data="handleUpdateData"></ShowData>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, reactive, toRefs } from 'vue';
 import { message } from 'ant-design-vue';
-import { checkToken } from '../api/checkToken';
+import { checkToken, queryID } from '../api/checkToken.js';
+import ShowData from './ShowData.vue'
 
+
+
+// 提交表单
 const formModel = ref({
     queryId: '',
     token: '',
@@ -59,6 +66,10 @@ const rules = {
     ],
 };
 
+// 用于查询接口的响应式数据
+// const responseData = reactive()
+const responseData = reactive({ value: null });
+
 const showPassword = ref(false);
 const currentStep = ref(0);
 const loading = ref(false);
@@ -69,10 +80,36 @@ const toggleTokenVisibility = () => {
     tokenVisible.value = !tokenVisible.value;
 };
 
-const obfuscateToken = (token) => {
-    // 示例混淆函数，可根据需求修改
-    return token.split('').reverse().join('');
+// 处理子组件ShowDate返回的最新数据
+const handleUpdateData = (data) => {
+    console.log('Received update:data event', data);
+    responseData.value = data;
 };
+
+
+
+// handel query logic
+const handleQuery = async () => {
+    const response = await queryID(formModel.value.queryId);
+
+    if (response.code === 1) {
+        message.success(response.msg)
+        // 将返回的数据赋值给responseData
+        responseData.value = response.data
+
+    } else {
+        // -1 不存在
+        message.error(response.msg)
+    }
+
+
+    // Reset the formModel values
+    formModel.value.queryId = '';
+    formModel.value.token = '';
+
+}
+
+
 
 // handel submit logic
 const handleSubmit = async (event) => {
@@ -86,14 +123,13 @@ const handleSubmit = async (event) => {
     }
 
     try {
-        const obfuscatedToken = obfuscateToken(formModel.value.token);
-        const responseData = await checkToken(formModel.value.queryId, obfuscatedToken);
+        const responseData = await checkToken(formModel.value.queryId, formModel.value.token);
 
-        if (responseData.queryIdExists) {
-            message.error('该 Query ID 已存在于数据库中。');
+        if (responseData.code === -1) {
+            message.info(responseData.msg);
         } else {
-            if (responseData.tokenExists) {
-                message.success('Token exists, you can proceed!');
+            if (responseData.code === 1) {
+                message.success(responseData.msg);
             } else {
                 message.error('The token for this query ID does not exist. Please add a token.');
             }
@@ -127,3 +163,20 @@ const nextStep = () => {
 };
 
 </script>
+
+
+<style scoped>
+.submit-button {
+    margin-right: 20px;
+}
+
+.query-button {
+    color: rgb(255, 255, 255);
+    /* 文字颜色 */
+    background-color: #f8e007;
+    /* 按钮背景颜色 */
+    border-color: rgb(39, 32, 38);
+    /* 按钮边框颜色 */
+}
+</style>
+
